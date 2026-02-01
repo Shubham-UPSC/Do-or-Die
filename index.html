@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UPSC CSE 2026 – Discipline System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --bg:#0b1020; --card:#111827;
+  --blue:#38bdf8; --green:#22c55e;
+  --yellow:#facc15; --red:#ef4444;
+  --purple:#a78bfa;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:'Segoe UI',system-ui;
+  background:radial-gradient(circle at top,var(--card),var(--bg));
+  color:#e5e7eb;padding:20px;
+}
+.container{
+  max-width:1200px;margin:auto;
+  background:linear-gradient(180deg,#111827,#020617);
+  border-radius:18px;padding:28px;
+  box-shadow:0 0 60px rgba(56,189,248,.15);
+}
+h1{
+  text-align:center;font-size:2.2rem;
+  background:linear-gradient(90deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;color:transparent;
+}
+.subtitle{text-align:center;color:#94a3b8;margin-bottom:30px}
+
+.dashboard{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:18px
+}
+.card{
+  background:linear-gradient(180deg,#020617,#111827);
+  border-radius:16px;padding:20px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.card h3{margin-top:0;color:var(--blue)}
+.big{font-size:2.2rem;font-weight:700}
+
+.progress-bar{height:16px;background:#020617;border-radius:10px;overflow:hidden}
+.progress-fill{height:100%;transition:.4s}
+
+button,input,textarea,select{
+  background:#020617;color:white;
+  border:1px solid #1f2937;border-radius:10px;
+  padding:8px;font-size:.95rem
+}
+button{
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border:none;font-weight:600
+}
+button.danger{background:var(--red)}
+
+.tabs{display:flex;gap:10px;overflow-x:auto;margin:30px 0 10px}
+.tab{padding:8px 14px;border-radius:20px;background:#020617;cursor:pointer}
+.tab.active{background:linear-gradient(90deg,var(--blue),var(--purple))}
+
+.week{display:none}
+.week.active{display:block}
+
+.topic{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  margin:6px 0
+}
+.topic span{flex:1}
+
+.badge{
+  padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600
+}
+.green{background:rgba(34,197,94,.15);color:var(--green)}
+.yellow{background:rgba(250,204,21,.15);color:var(--yellow)}
+.red{background:rgba(239,68,68,.15);color:var(--red)}
+
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:6px;text-align:center;border-bottom:1px solid #1f2937}
+th{color:#94a3b8}
+
+footer{text-align:center;margin-top:40px;color:#64748b}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>UPSC CSE 2026</h1>
+<p class="subtitle">Discipline beats motivation • System beats emotion</p>
+
+<!-- DASHBOARD -->
+<div class="dashboard">
+  <div class="card">
+    <h3>Overall Progress</h3>
+    <div class="big"><span id="percent">0</span>%</div>
+    <div class="progress-bar"><div id="overallBar" class="progress-fill"></div></div>
+    <p><span id="hours">0</span> / 784 hours</p>
+  </div>
+
+  <div class="card">
+    <h3>Streak</h3>
+    <div class="big">🔥 <span id="streak">0</span></div>
+    <p id="todayStatus">Today not logged ❌</p>
+  </div>
+
+  <div class="card">
+    <h3>Mock Readiness</h3>
+    <div class="big" id="mockStatus">🔴 Low</div>
+    <p>System-evaluated (cutoff hidden)</p>
+  </div>
+
+  <div class="card">
+    <h3>Daily Log</h3>
+    <p id="dateTime" style="color:#94a3b8;font-size:.9rem"></p>
+    <input type="number" id="logHours" placeholder="Hours today (1–9)">
+    <button onclick="logDay()">Log Day</button>
+    <button class="danger" onclick="resetToday()">Reset Today</button>
+  </div>
+</div>
+
+<!-- WEEKLY SYSTEM -->
+<div class="card" style="margin-top:30px">
+<h3>🔥 Weekly Syllabus Command (Strict)</h3>
+<div class="tabs" id="tabs"></div>
+<div id="weeks"></div>
+</div>
+
+<!-- MOCK SYSTEM -->
+<div class="card" style="margin-top:30px">
+<h3>🧪 Mock Analysis</h3>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+  <select id="mockType"><option>GS</option><option>CSAT</option></select>
+  <input id="mockTotal" placeholder="Total Marks">
+  <input id="mockScore" placeholder="Marks Obtained">
+  <button onclick="addMock()">Add Mock</button>
+  <button class="danger" onclick="resetMocks()">Reset</button>
+</div>
+
+<p style="margin-top:10px">
+Attempts: <b id="mCount">0</b> |
+Avg: <b id="mAvg">—</b>% |
+Best: <b id="mBest">—</b>% |
+Trend: <b id="mTrend">—</b>
+</p>
+
+<table>
+<thead><tr><th>#</th><th>Type</th><th>%</th><th>❌</th></tr></thead>
+<tbody id="mockTable"></tbody>
+</table>
+
+<canvas id="chart" height="120" style="margin-top:20px"></canvas>
+</div>
+
+<!-- NOTES -->
+<div class="card" style="margin-top:20px">
+<h3>Daily Reflection (Autosaved)</h3>
+<textarea id="notes"></textarea>
+</div>
+
+<footer>Revision → Mocks → Analysis → Rank</footer>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const TOTAL=784;
+const START=new Date("2026-02-01");
+
+let data=JSON.parse(localStorage.getItem("upscSystemFinal"))||{
+  hours:0, streak:0, last:null,
+  weeklyTopics:{}, revisionDone:{},
+  mocks:[], notes:""
+};
+
+/* ================= CLOCK ================= */
+function updateClock(){
+  const n=new Date();
+  dateTime.textContent =
+    n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) +
+    " • " + n.toLocaleTimeString();
+}
+setInterval(updateClock,1000); updateClock();
+
+/* ================= SYLLABUS (FINAL AUDITED) ================= */
+const syllabus = [
+  {
+    name:"Week 1 – Polity: Constitution",
+    topics:[
+      {t:"Historical background (1773–1947)",h:6},
+      {t:"Constituent Assembly: composition & committees",h:4},
+      {t:"Preamble: philosophy & SC cases",h:4},
+      {t:"Salient features of Constitution",h:3},
+      {t:"Union & its Territory (Art 1–4)",h:2},
+      {t:"Citizenship (Art 5–11)",h:3},
+      {t:"Fundamental Rights (Art 12–35)",h:12},
+      {t:"Directive Principles of State Policy",h:5},
+      {t:"Fundamental Duties",h:2},
+      {t:"Basic Structure doctrine",h:3},
+      {t:"Polity PYQs",h:5}
+    ]
+  },
+  {
+    name:"Week 2 – Polity: Governance",
+    topics:[
+      {t:"President & Vice-President",h:6},
+      {t:"Prime Minister & Council of Ministers",h:5},
+      {t:"Cabinet Committees",h:3},
+      {t:"Parliament: powers & procedure",h:8},
+      {t:"Parliamentary committees & privileges",h:4},
+      {t:"Federal structure & Centre–State relations",h:6},
+      {t:"Inter-State relations",h:3},
+      {t:"Supreme Court & High Courts",h:6},
+      {t:"Judicial review vs activism",h:3},
+      {t:"Constitutional & statutory bodies",h:3},
+      {t:"Local self-government (73rd & 74th)",h:2}
+    ]
+  },
+  {
+    name:"Week 3 – Modern Indian History",
+    topics:[
+      {t:"Decline of Mughal Empire",h:3},
+      {t:"Advent of Europeans",h:4},
+      {t:"Revolt of 1857",h:6},
+      {t:"INC & early nationalism",h:5},
+      {t:"Moderates & Extremists",h:5},
+      {t:"Gandhian movements",h:10},
+      {t:"Constitutional Acts (1909–1935)",h:5},
+      {t:"INA & Subhash Chandra Bose",h:3},
+      {t:"Partition & Independence",h:4},
+      {t:"Integration of princely states",h:2},
+      {t:"Post-independence consolidation",h:2}
+    ]
+  },
+  {
+    name:"Week 4 – Physical & World Geography",
+    topics:[
+      {t:"Interior of Earth & rocks",h:4},
+      {t:"Plate tectonics",h:6},
+      {t:"Geomorphic processes",h:6},
+      {t:"Atmosphere & composition",h:4},
+      {t:"Heat budget & winds",h:6},
+      {t:"Cyclones",h:5},
+      {t:"Ocean currents",h:6},
+      {t:"El Niño, La Niña & IOD",h:4},
+      {t:"World climatic regions",h:4},
+      {t:"Geography PYQs",h:4}
+    ]
+  },
+  {
+    name:"Week 5 – Indian Geography",
+    topics:[
+      {t:"Physiography of India",h:5},
+      {t:"Drainage systems",h:6},
+      {t:"Indian monsoon",h:6},
+      {t:"Soils of India",h:4},
+      {t:"Natural vegetation",h:3},
+      {t:"Agriculture & cropping patterns",h:6},
+      {t:"Mineral resources",h:5},
+      {t:"Industries & transport",h:6},
+      {t:"Regional planning",h:4},
+      {t:"Map work (India + World)",h:4}
+    ]
+  },
+  {
+    name:"Week 6 – Economy: Basics",
+    topics:[
+      {t:"Basic economic concepts",h:4},
+      {t:"GDP, inflation & deflation",h:6},
+      {t:"Growth vs development",h:4},
+      {t:"Planning in India & NITI Aayog",h:5},
+      {t:"Fiscal policy & budget",h:8},
+      {t:"Monetary policy",h:6},
+      {t:"Banking system",h:6},
+      {t:"RBI & tools",h:5},
+      {t:"Economy PYQs",h:5}
+    ]
+  },
+  {
+    name:"Week 7 – Economy: Development",
+    topics:[
+      {t:"Inclusive growth",h:6},
+      {t:"Poverty & inequality",h:6},
+      {t:"Employment & unemployment",h:6},
+      {t:"Demographics & population dividend",h:6},
+      {t:"Social sector schemes",h:6},
+      {t:"Globalization & economy",h:5},
+      {t:"Human development indicators",h:4},
+      {t:"Society basics (GS1)",h:4},
+      {t:"Economy PYQs",h:6}
+    ]
+  },
+  {
+    name:"Week 8 – Environment & Ecology",
+    topics:[
+      {t:"Ecosystem structure",h:6},
+      {t:"Biodiversity & conservation",h:6},
+      {t:"Protected areas & species",h:6},
+      {t:"Environmental pollution",h:6},
+      {t:"Climate change & IPCC",h:6},
+      {t:"International conventions",h:6},
+      {t:"Disaster management",h:7},
+      {t:"Environment PYQs",h:6}
+    ]
+  },
+  {
+    name:"Week 9 – Agriculture & IR",
+    topics:[
+      {t:"Indian agriculture basics",h:6},
+      {t:"Cropping seasons",h:5},
+      {t:"MSP, PDS & food security",h:6},
+      {t:"Land reforms",h:4},
+      {t:"Irrigation & reforms",h:4},
+      {t:"India’s neighbourhood",h:6},
+      {t:"International institutions",h:6},
+      {t:"Bilateral & multilateral relations",h:6},
+      {t:"Agri & IR PYQs",h:6}
+    ]
+  },
+  {
+    name:"Week 10 – Science & Tech + Security",
+    topics:[
+      {t:"Basic science (NCERT)",h:6},
+      {t:"IT, AI & digital tech",h:6},
+      {t:"Space technology",h:5},
+      {t:"Biotechnology",h:6},
+      {t:"Intellectual Property Rights",h:4},
+      {t:"Internal security challenges",h:6},
+      {t:"Cyber security",h:6},
+      {t:"Border & coastal security",h:5},
+      {t:"S&T PYQs",h:5}
+    ]
+  },
+  {
+    name:"Week 11 – Society & World History",
+    topics:[
+      {t:"Indian society & diversity",h:6},
+      {t:"Role of women",h:6},
+      {t:"Population & urbanization",h:6},
+      {t:"Migration",h:5},
+      {t:"Globalization impact",h:6},
+      {t:"World history (18th–20th century)",h:10},
+      {t:"Society PYQs",h:10}
+    ]
+  },
+  {
+    name:"Week 12 – Ethics",
+    topics:[
+      {t:"Ethics & human interface",h:6},
+      {t:"Attitude & aptitude",h:6},
+      {t:"Emotional intelligence",h:6},
+      {t:"Thinkers & philosophers",h:10},
+      {t:"Probity in governance",h:8},
+      {t:"Ethics case studies",h:13}
+    ]
+  },
+  {
+    name:"Week 13 – Revision I",
+    topics:[
+      {t:"Polity revision",h:15},
+      {t:"Modern history revision",h:12},
+      {t:"Geography revision",h:12},
+      {t:"Current affairs revision",h:10}
+    ]
+  },
+  {
+    name:"Week 14 – Revision II",
+    topics:[
+      {t:"Economy revision",h:15},
+      {t:"Environment revision",h:12},
+      {t:"Science & Tech revision",h:10},
+      {t:"CSAT intensive practice",h:12}
+    ]
+  },
+  {
+    name:"Week 15 – Consolidation",
+    topics:[
+      {t:"Weak areas from mocks",h:15},
+      {t:"Short notes & mind maps",h:12},
+      {t:"Full-length mocks",h:12},
+      {t:"Mock analysis",h:10}
+    ]
+  },
+  {
+    name:"Week 16 – Final Phase",
+    topics:[
+      {t:"Ultra-light revision",h:15},
+      {t:"Current affairs skim",h:10},
+      {t:"Exam strategy",h:8},
+      {t:"Mental conditioning & sleep",h:8},
+      {t:"Buffer & rest",h:8}
+    ]
+  }
+];
+
+/* ================= RENDER WEEKS ================= */
+const tabs=document.getElementById("tabs");
+const weeksDiv=document.getElementById("weeks");
+
+syllabus.forEach((wk,i)=>{
+  const tab=document.createElement("div");
+  tab.className="tab";
+  tab.textContent=`W${i+1}`;
+  tab.onclick=()=>openWeek(i);
+  tabs.appendChild(tab);
+
+  const div=document.createElement("div");
+  div.className="week";
+  div.innerHTML=`<h4>${wk.name}</h4>`;
+
+  wk.topics.forEach(tp=>{
+    const id=wk.name+tp.t;
+    div.innerHTML+=`
+      <div class="topic">
+        <label>
+          <input type="checkbox" ${data.weeklyTopics[id]?'checked':''}
+            onchange="toggleTopic('${id}')">
+          ${tp.t}
+        </label>
+        <span class="badge yellow">${tp.h}h</span>
+      </div>`;
+  });
+
+  div.innerHTML+=`
+    <button onclick="markRevision(${i})">Mark Revision Done</button>
+    <span class="badge ${data.revisionDone[i]?'green':'red'}">
+      Revision: ${data.revisionDone[i]?'Done':'Pending'}
+    </span>`;
+  weeksDiv.appendChild(div);
+});
+
+/* ================= CORE LOGIC ================= */
+function openWeek(i){
+  if(i>0){
+    const prev=syllabus[i-1];
+    const done=prev.topics.filter(tp=>data.weeklyTopics[prev.name+tp.t]).length;
+    if(done/prev.topics.length<0.8 || !data.revisionDone[i-1] || data.mocks.length<Math.max(1,i-2)){
+      alert("🔒 Week locked. Complete syllabus + revision + mocks.");
+      return;
+    }
+  }
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".week").forEach(w=>w.classList.remove("active"));
+  tabs.children[i].classList.add("active");
+  weeksDiv.children[i].classList.add("active");
+}
+
+function toggleTopic(id){data.weeklyTopics[id]=!data.weeklyTopics[id];save();}
+function markRevision(i){data.revisionDone[i]=true;save();}
+
+/* ================= DAILY LOG ================= */
+function logDay(){
+  const h=+logHours.value;
+  if(!h||h>9) return alert("Enter 1–9 hrs");
+  const today=new Date().toDateString();
+  if(data.last===today) data.hours+=h;
+  else{
+    const y=new Date(); y.setDate(y.getDate()-1);
+    data.streak=(data.last===y.toDateString())?data.streak+1:1;
+    data.last=today; data.hours+=h;
+  }
+  logHours.value=""; save(); update();
+}
+function resetToday(){
+  if(data.last!==new Date().toDateString()) return alert("No log today");
+  if(confirm("Reset today's log?")){
+    data.hours=Math.max(0,data.hours-9);
+    data.last=null;
+    data.streak=Math.max(0,data.streak-1);
+    save(); update();
+  }
+}
+
+/* ================= MOCK SYSTEM ================= */
+function addMock(){
+  const t=+mockTotal.value, s=+mockScore.value;
+  if(!t||!s||s>t) return alert("Invalid marks");
+  data.mocks.push({type:mockType.value,percent:(s/t*100)});
+  save(); renderMocks();
+}
+function deleteMock(i){data.mocks.splice(i,1); save(); renderMocks();}
+function resetMocks(){ if(confirm("Reset all mocks?")){ data.mocks=[]; save(); renderMocks(); } }
+
+function renderMocks(){
+  const tb=document.getElementById("mockTable");
+  tb.innerHTML="";
+  const p=data.mocks.map(m=>m.percent);
+  data.mocks.forEach((m,i)=>{
+    tb.innerHTML+=`
+      <tr>
+        <td>${i+1}</td>
+        <td>${m.type}</td>
+        <td>${m.percent.toFixed(1)}%</td>
+        <td><button class="danger" onclick="deleteMock(${i})">✖</button></td>
+      </tr>`;
+  });
+  mCount.textContent=p.length;
+  mAvg.textContent=p.length?(p.reduce((a,b)=>a+b)/p.length).toFixed(1):"—";
+  mBest.textContent=p.length?Math.max(...p).toFixed(1):"—";
+  mTrend.textContent=p.length<3?"—":(p.at(-1)>p.at(-3)?"↑":"↓");
+  updateMockStatus(); drawChart();
+}
+
+function updateMockStatus(){
+  const avg=data.mocks.reduce((a,b)=>a+b.percent,0)/(data.mocks.length||1);
+  mockStatus.textContent=avg>65?"🟢 Good":avg>50?"🟡 Moderate":"🔴 Low";
+}
+
+/* ================= CHART ================= */
+let chart;
+function drawChart(){
+  chart?.destroy();
+  chart=new Chart(document.getElementById("chart"),{
+    type:"line",
+    data:{
+      labels:data.mocks.map((_,i)=>`M${i+1}`),
+      datasets:[{data:data.mocks.map(m=>m.percent),borderColor:"#38bdf8"}]
+    }
+  });
+}
+
+/* ================= UPDATE & SAVE ================= */
+function update(){
+  percent.textContent=Math.round(data.hours/TOTAL*100);
+  hours.textContent=data.hours;
+  streak.textContent=data.streak;
+  todayStatus.textContent=data.last===new Date().toDateString()?"Today logged ✅":"Today not logged ❌";
+  overallBar.style.width=(data.hours/TOTAL*100)+"%";
+  notes.value=data.notes;
+}
+notes.oninput=()=>{data.notes=notes.value; save();}
+function save(){localStorage.setItem("upscSystemFinal",JSON.stringify(data));}
+
+openWeek(0); update(); renderMocks();
+</script>
+</body>
+</html>
