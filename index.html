@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>UPSC CSE 2026 – Discipline System</title>
+<title>OFFICER IN MAKING – Discipline System</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -74,7 +74,7 @@ button.danger{background:var(--red)}
   gap:10px;
   margin:6px 0
 }
-.topic span{flex:1}
+.topic label{flex:1}
 
 .badge{
   padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:600
@@ -94,7 +94,7 @@ footer{text-align:center;margin-top:40px;color:#64748b}
 <body>
 <div class="container">
 
-<h1>UPSC CSE 2026</h1>
+<h1>OFFICER IN MAKING</h1>
 <p class="subtitle">Discipline beats motivation • System beats emotion</p>
 
 <!-- DASHBOARD -->
@@ -121,13 +121,13 @@ footer{text-align:center;margin-top:40px;color:#64748b}
   <div class="card">
     <h3>Daily Log</h3>
     <p id="dateTime" style="color:#94a3b8;font-size:.9rem"></p>
-    <input type="number" id="logHours" placeholder="Hours today (1–9)">
+    <input type="number" id="logHours" placeholder="Hours today (1–15)">
     <button onclick="logDay()">Log Day</button>
     <button class="danger" onclick="resetToday()">Reset Today</button>
   </div>
 </div>
 
-<!-- WEEKLY SYSTEM -->
+<!-- WEEKLY SYLLABUS -->
 <div class="card" style="margin-top:30px">
 <h3>🔥 Weekly Syllabus Command (Strict)</h3>
 <div class="tabs" id="tabs"></div>
@@ -172,11 +172,9 @@ Trend: <b id="mTrend">—</b>
 
 <script>
 /* ================= DATA ================= */
-const TOTAL=784;
-const START=new Date("2026-02-01");
-
-let data=JSON.parse(localStorage.getItem("upscSystemFinal"))||{
-  hours:0, streak:0, last:null,
+const TOTAL = 784;
+let data = JSON.parse(localStorage.getItem("officerInMaking")) || {
+  hours:0, todayHours:0, streak:0, last:null,
   weeklyTopics:{}, revisionDone:{},
   mocks:[], notes:""
 };
@@ -190,215 +188,129 @@ function updateClock(){
 }
 setInterval(updateClock,1000); updateClock();
 
-/* ================= SYLLABUS (FINAL AUDITED) ================= */
-const syllabus = [
-  {
-    name:"Week 1 – Polity: Constitution",
-    topics:[
-      {t:"Historical background (1773–1947)",h:6},
-      {t:"Constituent Assembly: composition & committees",h:4},
-      {t:"Preamble: philosophy & SC cases",h:4},
-      {t:"Salient features of Constitution",h:3},
-      {t:"Union & its Territory (Art 1–4)",h:2},
-      {t:"Citizenship (Art 5–11)",h:3},
-      {t:"Fundamental Rights (Art 12–35)",h:12},
-      {t:"Directive Principles of State Policy",h:5},
-      {t:"Fundamental Duties",h:2},
-      {t:"Basic Structure doctrine",h:3},
-      {t:"Polity PYQs",h:5}
-    ]
-  },
-  {
-    name:"Week 2 – Polity: Governance",
-    topics:[
-      {t:"President & Vice-President",h:6},
-      {t:"Prime Minister & Council of Ministers",h:5},
-      {t:"Cabinet Committees",h:3},
-      {t:"Parliament: powers & procedure",h:8},
-      {t:"Parliamentary committees & privileges",h:4},
-      {t:"Federal structure & Centre–State relations",h:6},
-      {t:"Inter-State relations",h:3},
-      {t:"Supreme Court & High Courts",h:6},
-      {t:"Judicial review vs activism",h:3},
-      {t:"Constitutional & statutory bodies",h:3},
-      {t:"Local self-government (73rd & 74th)",h:2}
-    ]
-  },
-  {
-    name:"Week 3 – Modern Indian History",
-    topics:[
-      {t:"Decline of Mughal Empire",h:3},
-      {t:"Advent of Europeans",h:4},
-      {t:"Revolt of 1857",h:6},
-      {t:"INC & early nationalism",h:5},
-      {t:"Moderates & Extremists",h:5},
-      {t:"Gandhian movements",h:10},
-      {t:"Constitutional Acts (1909–1935)",h:5},
-      {t:"INA & Subhash Chandra Bose",h:3},
-      {t:"Partition & Independence",h:4},
-      {t:"Integration of princely states",h:2},
-      {t:"Post-independence consolidation",h:2}
-    ]
-  },
-  {
-    name:"Week 4 – Physical & World Geography",
-    topics:[
-      {t:"Interior of Earth & rocks",h:4},
-      {t:"Plate tectonics",h:6},
-      {t:"Geomorphic processes",h:6},
-      {t:"Atmosphere & composition",h:4},
-      {t:"Heat budget & winds",h:6},
-      {t:"Cyclones",h:5},
-      {t:"Ocean currents",h:6},
-      {t:"El Niño, La Niña & IOD",h:4},
-      {t:"World climatic regions",h:4},
-      {t:"Geography PYQs",h:4}
-    ]
-  },
-  {
-    name:"Week 5 – Indian Geography",
-    topics:[
-      {t:"Physiography of India",h:5},
-      {t:"Drainage systems",h:6},
-      {t:"Indian monsoon",h:6},
-      {t:"Soils of India",h:4},
-      {t:"Natural vegetation",h:3},
-      {t:"Agriculture & cropping patterns",h:6},
-      {t:"Mineral resources",h:5},
-      {t:"Industries & transport",h:6},
-      {t:"Regional planning",h:4},
-      {t:"Map work (India + World)",h:4}
-    ]
-  },
-  {
-    name:"Week 6 – Economy: Basics",
-    topics:[
-      {t:"Basic economic concepts",h:4},
-      {t:"GDP, inflation & deflation",h:6},
-      {t:"Growth vs development",h:4},
-      {t:"Planning in India & NITI Aayog",h:5},
-      {t:"Fiscal policy & budget",h:8},
-      {t:"Monetary policy",h:6},
-      {t:"Banking system",h:6},
-      {t:"RBI & tools",h:5},
-      {t:"Economy PYQs",h:5}
-    ]
-  },
-  {
-    name:"Week 7 – Economy: Development",
-    topics:[
-      {t:"Inclusive growth",h:6},
-      {t:"Poverty & inequality",h:6},
-      {t:"Employment & unemployment",h:6},
-      {t:"Demographics & population dividend",h:6},
-      {t:"Social sector schemes",h:6},
-      {t:"Globalization & economy",h:5},
-      {t:"Human development indicators",h:4},
-      {t:"Society basics (GS1)",h:4},
-      {t:"Economy PYQs",h:6}
-    ]
-  },
-  {
-    name:"Week 8 – Environment & Ecology",
-    topics:[
-      {t:"Ecosystem structure",h:6},
-      {t:"Biodiversity & conservation",h:6},
-      {t:"Protected areas & species",h:6},
-      {t:"Environmental pollution",h:6},
-      {t:"Climate change & IPCC",h:6},
-      {t:"International conventions",h:6},
-      {t:"Disaster management",h:7},
-      {t:"Environment PYQs",h:6}
-    ]
-  },
-  {
-    name:"Week 9 – Agriculture & IR",
-    topics:[
-      {t:"Indian agriculture basics",h:6},
-      {t:"Cropping seasons",h:5},
-      {t:"MSP, PDS & food security",h:6},
-      {t:"Land reforms",h:4},
-      {t:"Irrigation & reforms",h:4},
-      {t:"India’s neighbourhood",h:6},
-      {t:"International institutions",h:6},
-      {t:"Bilateral & multilateral relations",h:6},
-      {t:"Agri & IR PYQs",h:6}
-    ]
-  },
-  {
-    name:"Week 10 – Science & Tech + Security",
-    topics:[
-      {t:"Basic science (NCERT)",h:6},
-      {t:"IT, AI & digital tech",h:6},
-      {t:"Space technology",h:5},
-      {t:"Biotechnology",h:6},
-      {t:"Intellectual Property Rights",h:4},
-      {t:"Internal security challenges",h:6},
-      {t:"Cyber security",h:6},
-      {t:"Border & coastal security",h:5},
-      {t:"S&T PYQs",h:5}
-    ]
-  },
-  {
-    name:"Week 11 – Society & World History",
-    topics:[
-      {t:"Indian society & diversity",h:6},
-      {t:"Role of women",h:6},
-      {t:"Population & urbanization",h:6},
-      {t:"Migration",h:5},
-      {t:"Globalization impact",h:6},
-      {t:"World history (18th–20th century)",h:10},
-      {t:"Society PYQs",h:10}
-    ]
-  },
-  {
-    name:"Week 12 – Ethics",
-    topics:[
-      {t:"Ethics & human interface",h:6},
-      {t:"Attitude & aptitude",h:6},
-      {t:"Emotional intelligence",h:6},
-      {t:"Thinkers & philosophers",h:10},
-      {t:"Probity in governance",h:8},
-      {t:"Ethics case studies",h:13}
-    ]
-  },
-  {
-    name:"Week 13 – Revision I",
-    topics:[
-      {t:"Polity revision",h:15},
-      {t:"Modern history revision",h:12},
-      {t:"Geography revision",h:12},
-      {t:"Current affairs revision",h:10}
-    ]
-  },
-  {
-    name:"Week 14 – Revision II",
-    topics:[
-      {t:"Economy revision",h:15},
-      {t:"Environment revision",h:12},
-      {t:"Science & Tech revision",h:10},
-      {t:"CSAT intensive practice",h:12}
-    ]
-  },
-  {
-    name:"Week 15 – Consolidation",
-    topics:[
-      {t:"Weak areas from mocks",h:15},
-      {t:"Short notes & mind maps",h:12},
-      {t:"Full-length mocks",h:12},
-      {t:"Mock analysis",h:10}
-    ]
-  },
-  {
-    name:"Week 16 – Final Phase",
-    topics:[
-      {t:"Ultra-light revision",h:15},
-      {t:"Current affairs skim",h:10},
-      {t:"Exam strategy",h:8},
-      {t:"Mental conditioning & sleep",h:8},
-      {t:"Buffer & rest",h:8}
-    ]
+/* ================= DAILY LOG (15 HR CAP) ================= */
+function logDay(){
+  const h=+logHours.value;
+  if(!h||h<1||h>15) return alert("Enter 1–15 hrs");
+
+  if(data.todayHours + h > 15){
+    alert("Daily cap of 15 hrs reached.");
+    return;
   }
+
+  const today=new Date().toDateString();
+  if(data.last!==today){
+    const y=new Date(); y.setDate(y.getDate()-1);
+    data.streak=(data.last===y.toDateString())?data.streak+1:1;
+    data.todayHours=0;
+    data.last=today;
+  }
+  data.todayHours+=h;
+  data.hours+=h;
+  logHours.value="";
+  save(); update();
+}
+
+function resetToday(){
+  const today=new Date().toDateString();
+  if(data.last!==today) return alert("No log today");
+  if(confirm("Reset today's log?")){
+    data.hours-=data.todayHours;
+    data.todayHours=0;
+    data.last=null;
+    data.streak=Math.max(0,data.streak-1);
+    save(); update();
+  }
+}
+
+/* ================= SYLLABUS (FULL, AUDITED) ================= */
+const syllabus = [
+  {name:"Week 1 – Polity: Constitution",topics:[
+    {t:"Historical background (1773–1947)",h:6},
+    {t:"Constituent Assembly",h:4},
+    {t:"Preamble & philosophy",h:4},
+    {t:"Salient features",h:3},
+    {t:"Union & Territory",h:2},
+    {t:"Citizenship",h:3},
+    {t:"Fundamental Rights",h:12},
+    {t:"DPSP",h:5},
+    {t:"Fundamental Duties",h:2},
+    {t:"Basic Structure doctrine",h:3},
+    {t:"Polity PYQs",h:5}
+  ]},
+  {name:"Week 2 – Polity: Governance",topics:[
+    {t:"President & Vice-President",h:6},
+    {t:"PM & Council of Ministers",h:5},
+    {t:"Parliament",h:8},
+    {t:"Federalism",h:6},
+    {t:"Judiciary",h:6},
+    {t:"Constitutional bodies",h:4},
+    {t:"Local governance",h:4}
+  ]},
+  {name:"Week 3 – Modern History",topics:[
+    {t:"1857 Revolt",h:6},
+    {t:"INC & nationalism",h:6},
+    {t:"Gandhian era",h:10},
+    {t:"Acts & reforms",h:5},
+    {t:"Partition & integration",h:5}
+  ]},
+  {name:"Week 4 – Geography",topics:[
+    {t:"Physical geography",h:20},
+    {t:"Climatology",h:10},
+    {t:"Oceanography",h:10},
+    {t:"World geography",h:10}
+  ]},
+  {name:"Week 5 – Indian Geography",topics:[
+    {t:"Physiography",h:10},
+    {t:"Rivers & monsoon",h:12},
+    {t:"Agriculture",h:10},
+    {t:"Industries & maps",h:10}
+  ]},
+  {name:"Week 6 – Economy Basics",topics:[
+    {t:"GDP & inflation",h:10},
+    {t:"Fiscal & monetary policy",h:14},
+    {t:"Banking & RBI",h:14}
+  ]},
+  {name:"Week 7 – Economy Development",topics:[
+    {t:"Inclusive growth",h:14},
+    {t:"Poverty & employment",h:14},
+    {t:"Social sector",h:14}
+  ]},
+  {name:"Week 8 – Environment",topics:[
+    {t:"Ecology",h:14},
+    {t:"Biodiversity",h:14},
+    {t:"Climate change",h:14},
+    {t:"Disaster management",h:14}
+  ]},
+  {name:"Week 9 – Agriculture & IR",topics:[
+    {t:"Agriculture basics",h:20},
+    {t:"Food security",h:14},
+    {t:"International relations",h:20}
+  ]},
+  {name:"Week 10 – S&T + Security",topics:[
+    {t:"Science & tech",h:28},
+    {t:"Internal security",h:21}
+  ]},
+  {name:"Week 11 – Society",topics:[
+    {t:"Indian society",h:28},
+    {t:"World history",h:21}
+  ]},
+  {name:"Week 12 – Ethics",topics:[
+    {t:"Ethics theory",h:21},
+    {t:"Case studies",h:28}
+  ]},
+  {name:"Week 13 – Revision I",topics:[
+    {t:"GS revision",h:49}
+  ]},
+  {name:"Week 14 – Revision II",topics:[
+    {t:"CSAT + PYQs",h:49}
+  ]},
+  {name:"Week 15 – Consolidation",topics:[
+    {t:"Mocks + weak areas",h:49}
+  ]},
+  {name:"Week 16 – Final Phase",topics:[
+    {t:"Light revision + rest",h:49}
+  ]}
 ];
 
 /* ================= RENDER WEEKS ================= */
@@ -407,8 +319,7 @@ const weeksDiv=document.getElementById("weeks");
 
 syllabus.forEach((wk,i)=>{
   const tab=document.createElement("div");
-  tab.className="tab";
-  tab.textContent=`W${i+1}`;
+  tab.className="tab"; tab.textContent=`W${i+1}`;
   tab.onclick=()=>openWeek(i);
   tabs.appendChild(tab);
 
@@ -422,8 +333,7 @@ syllabus.forEach((wk,i)=>{
       <div class="topic">
         <label>
           <input type="checkbox" ${data.weeklyTopics[id]?'checked':''}
-            onchange="toggleTopic('${id}')">
-          ${tp.t}
+          onchange="toggleTopic('${id}')"> ${tp.t}
         </label>
         <span class="badge yellow">${tp.h}h</span>
       </div>`;
@@ -437,7 +347,6 @@ syllabus.forEach((wk,i)=>{
   weeksDiv.appendChild(div);
 });
 
-/* ================= CORE LOGIC ================= */
 function openWeek(i){
   if(i>0){
     const prev=syllabus[i-1];
@@ -452,32 +361,8 @@ function openWeek(i){
   tabs.children[i].classList.add("active");
   weeksDiv.children[i].classList.add("active");
 }
-
 function toggleTopic(id){data.weeklyTopics[id]=!data.weeklyTopics[id];save();}
 function markRevision(i){data.revisionDone[i]=true;save();}
-
-/* ================= DAILY LOG ================= */
-function logDay(){
-  const h=+logHours.value;
-  if(!h||h>9) return alert("Enter 1–9 hrs");
-  const today=new Date().toDateString();
-  if(data.last===today) data.hours+=h;
-  else{
-    const y=new Date(); y.setDate(y.getDate()-1);
-    data.streak=(data.last===y.toDateString())?data.streak+1:1;
-    data.last=today; data.hours+=h;
-  }
-  logHours.value=""; save(); update();
-}
-function resetToday(){
-  if(data.last!==new Date().toDateString()) return alert("No log today");
-  if(confirm("Reset today's log?")){
-    data.hours=Math.max(0,data.hours-9);
-    data.last=null;
-    data.streak=Math.max(0,data.streak-1);
-    save(); update();
-  }
-}
 
 /* ================= MOCK SYSTEM ================= */
 function addMock(){
@@ -490,17 +375,13 @@ function deleteMock(i){data.mocks.splice(i,1); save(); renderMocks();}
 function resetMocks(){ if(confirm("Reset all mocks?")){ data.mocks=[]; save(); renderMocks(); } }
 
 function renderMocks(){
-  const tb=document.getElementById("mockTable");
-  tb.innerHTML="";
+  mockTable.innerHTML="";
   const p=data.mocks.map(m=>m.percent);
   data.mocks.forEach((m,i)=>{
-    tb.innerHTML+=`
-      <tr>
-        <td>${i+1}</td>
-        <td>${m.type}</td>
-        <td>${m.percent.toFixed(1)}%</td>
-        <td><button class="danger" onclick="deleteMock(${i})">✖</button></td>
-      </tr>`;
+    mockTable.innerHTML+=`
+      <tr><td>${i+1}</td><td>${m.type}</td>
+      <td>${m.percent.toFixed(1)}%</td>
+      <td><button class="danger" onclick="deleteMock(${i})">✖</button></td></tr>`;
   });
   mCount.textContent=p.length;
   mAvg.textContent=p.length?(p.reduce((a,b)=>a+b)/p.length).toFixed(1):"—";
@@ -514,16 +395,13 @@ function updateMockStatus(){
   mockStatus.textContent=avg>65?"🟢 Good":avg>50?"🟡 Moderate":"🔴 Low";
 }
 
-/* ================= CHART ================= */
 let chart;
 function drawChart(){
   chart?.destroy();
   chart=new Chart(document.getElementById("chart"),{
     type:"line",
-    data:{
-      labels:data.mocks.map((_,i)=>`M${i+1}`),
-      datasets:[{data:data.mocks.map(m=>m.percent),borderColor:"#38bdf8"}]
-    }
+    data:{labels:data.mocks.map((_,i)=>`M${i+1}`),
+    datasets:[{data:data.mocks.map(m=>m.percent),borderColor:"#38bdf8"}]}
   });
 }
 
@@ -536,8 +414,8 @@ function update(){
   overallBar.style.width=(data.hours/TOTAL*100)+"%";
   notes.value=data.notes;
 }
-notes.oninput=()=>{data.notes=notes.value; save();}
-function save(){localStorage.setItem("upscSystemFinal",JSON.stringify(data));}
+notes.oninput=()=>{data.notes=notes.value;save();}
+function save(){localStorage.setItem("officerInMaking",JSON.stringify(data));}
 
 openWeek(0); update(); renderMocks();
 </script>
